@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "cb65967bdf3a7372749ce6144be4ee63f412aeeac624342fda3a2b58b1c43c15"
+            "sha256": "ea7f7aedf63d38ec0389001af0a7325659e46cebfce06637cbbd5cd061d3ef1c"
         },
         "requires": {},
         "sources": [
@@ -11,6 +11,70 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "ansible": {
+            "version": "==2.3.1.0"
+        },
+        "asn1crypto": {
+            "version": "==0.22.0"
+        },
+        "certifi": {
+            "version": "==2017.4.17"
+        },
+        "cffi": {
+            "version": "==1.10.0"
+        },
+        "chardet": {
+            "version": "==3.0.3"
+        },
+        "cryptography": {
+            "version": "==1.9"
+        },
+        "dopy": {
+            "version": "==0.3.7"
+        },
+        "enum34": {
+            "version": "==1.1.6"
+        },
+        "idna": {
+            "version": "==2.5"
+        },
+        "ipaddress": {
+            "version": "==1.0.18"
+        },
+        "jinja2": {
+            "version": "==2.9.6"
+        },
+        "markupsafe": {
+            "version": "==1.0"
+        },
+        "paramiko": {
+            "version": "==2.1.2"
+        },
+        "pyasn1": {
+            "version": "==0.2.3"
+        },
+        "pycparser": {
+            "version": "==2.17"
+        },
+        "pycrypto": {
+            "version": "==2.6.1"
+        },
+        "pyyaml": {
+            "version": "==3.12"
+        },
+        "requests": {
+            "version": "==2.17.3"
+        },
+        "setuptools": {
+            "version": "==36.0.1"
+        },
+        "six": {
+            "version": "==1.10.0"
+        },
+        "urllib3": {
+            "version": "==1.21.1"
+        }
+    },
     "develop": {}
 }
