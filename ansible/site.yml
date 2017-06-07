@@ -1,0 +1,61 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Add SSH key to DO account
+      digital_ocean:
+        state: present
+        command: ssh
+        name: mimic
+        ssh_pub_key: "{{ lookup('file', '~/.ssh/mimic.pub') }}"
+      register: ssh_response
+
+    - name: Create block storage server Droplets
+      digital_ocean:
+        state: present
+        command: droplet
+        name: storage-server-{{ item }}
+        size_id: 512mb
+        region_id: nyc3
+        private_networking: yes
+        image_id: ubuntu-16-04-x64
+        unique_name: yes
+        ssh_key_ids: "{{ ssh_response.ssh_key.id }}"
+        user_data: |
+          #!/bin/bash
+          DEBIAN_FRONTEND=noninteractive apt-get -q -y install python-minimal
+      with_sequence: count=2
+      register: do_servers
+
+    - debug:
+        var: item
+      with_items: "{{ do_servers.results }}"
+
+    - name: Add block storage servers to inventory
+      add_host:
+        name: "{{ item.droplet.ip_address }}"
+        groups: do_servers
+      when: item.droplet is defined
+      with_items: "{{ do_servers.results }}"
+
+- hosts: do_servers
+  remote_user: root
+  gather_facts: false
+
+  tasks:
+    - name: Wait for port 22 to become available
+      wait_for:
+        port: 22
+        host: "{{ inventory_hostname }}"
+      delegate_to: localhost
+
+    - name: Wait long enough for cloud-init to install python2
+      pause:
+        seconds: 20
+      delegate_to: localhost
+
+    - name: Say hello
+      shell: >-
+        echo "Hello from $HOSTNAME"
