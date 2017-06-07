@@ -12,11 +12,11 @@
         ssh_pub_key: "{{ lookup('file', '~/.ssh/mimic.pub') }}"
       register: ssh_response
 
-    - name: Create block storage server Droplets
+    - name: Create Droplets
       digital_ocean:
         state: present
         command: droplet
-        name: storage-server-{{ item }}
+        name: node{{ item }}
         size_id: 512mb
         region_id: nyc3
         private_networking: yes
@@ -26,21 +26,36 @@
         user_data: |
           #!/bin/bash
           DEBIAN_FRONTEND=noninteractive apt-get -q -y install python-minimal
-      with_sequence: count=2
-      register: do_servers
+      with_sequence: count=6
+      register: do
+      async: 600
+      poll: 0
+
+    - name: Wait for Droplet creation to complete
+      async_status:
+        jid: "{{ item.ansible_job_id }}"
+      register: do_jobs
+      until: do_jobs.finished
+      retries: 300
+      with_items: "{{ do.results }}"
 
     - debug:
-        var: item
-      with_items: "{{ do_servers.results }}"
+        var: do.results
 
-    - name: Add block storage servers to inventory
+    - name: Add Droplets to inventory
       add_host:
-        name: "{{ item.droplet.ip_address }}"
-        groups: do_servers
-      when: item.droplet is defined
-      with_items: "{{ do_servers.results }}"
+        name: "{{ (lookup('file', item.results_file) | from_json).droplet.ip_address }}"
+        groups: do
+      when: (lookup('file', item.results_file) | from_json).droplet is defined
+      with_items: "{{ do.results }}"
 
-- hosts: do_servers
+    - name: Clean up async job cache
+      async_status:
+        jid: "{{ item.ansible_job_id }}"
+        mode: cleanup
+      with_items: "{{ do.results }}"
+
+- hosts: do
   remote_user: root
   gather_facts: false
 
@@ -51,11 +66,15 @@
         host: "{{ inventory_hostname }}"
       delegate_to: localhost
 
-    - name: Wait long enough for cloud-init to install python2
-      pause:
-        seconds: 20
-      delegate_to: localhost
+    # - name: Wait long enough for cloud-init to install python2
+    #   pause:
+    #     seconds: 20
+    #   delegate_to: localhost
 
     - name: Say hello
       shell: >-
-        echo "Hello from $HOSTNAME"
+        echo "Hello from {{ inventory_hostname }}"
+      register: hello
+
+    - debug:
+        msg: "{{ hello.stdout_lines }}"
