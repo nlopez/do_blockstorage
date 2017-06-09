@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ea7f7aedf63d38ec0389001af0a7325659e46cebfce06637cbbd5cd061d3ef1c"
+            "sha256": "bc1e9645b034ee58dc813e370fcf8c0fda75c986841c948e0b4fc8c838be07e6"
         },
         "requires": {},
         "sources": [
@@ -47,6 +47,9 @@
         },
         "markupsafe": {
             "version": "==1.0"
+        },
+        "netaddr": {
+            "version": "==0.7.19"
         },
         "paramiko": {
             "version": "==2.1.2"

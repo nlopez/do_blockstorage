@@ -3,6 +3,9 @@
   connection: local
   gather_facts: false
 
+  vars:
+    droplets_count: 6
+
   tasks:
     - name: Add SSH key to DO account
       digital_ocean:
@@ -11,6 +14,7 @@
         name: mimic
         ssh_pub_key: "{{ lookup('file', '~/.ssh/mimic.pub') }}"
       register: ssh_response
+      tags: provision
 
     - name: Create Droplets
       digital_ocean:
@@ -26,10 +30,11 @@
         user_data: |
           #!/bin/bash
           DEBIAN_FRONTEND=noninteractive apt-get -q -y install python-minimal
-      with_sequence: count=6
+      with_sequence: count={{ droplets_count }}
       register: do
       async: 600
       poll: 0
+      tags: provision
 
     - name: Wait for Droplet creation to complete
       async_status:
@@ -38,25 +43,57 @@
       until: do_jobs.finished
       retries: 300
       with_items: "{{ do.results }}"
+      tags: provision
 
-    - debug:
-        var: do.results
-
-    - name: Add Droplets to inventory
-      add_host:
-        name: "{{ (lookup('file', item.results_file) | from_json).droplet.ip_address }}"
-        groups: do
-      when: (lookup('file', item.results_file) | from_json).droplet is defined
-      with_items: "{{ do.results }}"
+    - meta: refresh_inventory
+      tags: provision
 
     - name: Clean up async job cache
       async_status:
         jid: "{{ item.ansible_job_id }}"
         mode: cleanup
       with_items: "{{ do.results }}"
+      tags: provision
 
-- hosts: do
-  remote_user: root
+- hosts: all
+  gather_facts: false
+
+  vars:
+    client_count: 1
+
+  tasks:
+    - name: Group client node(s)
+      group_by: key=client
+      when: ansible_play_hosts.index(inventory_hostname) < client_count | int
+      tags: provision
+
+    - name: Group server node(s)
+      group_by: key=server
+      when: inventory_hostname not in groups.client
+      tags: provision
+
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Tag client nodes
+      digital_ocean_tag:
+        name: client
+        state: present
+        resource_id: "{{ hostvars[item].do_id }}"
+      with_items: "{{ groups.client }}"
+      tags: provision
+
+    - name: Tag server nodes
+      digital_ocean_tag:
+        name: server
+        state: present
+        resource_id: "{{ hostvars[item].do_id }}"
+      with_items: "{{ groups.server }}"
+      tags: provision
+
+- hosts: all
   gather_facts: false
 
   tasks:
@@ -65,11 +102,7 @@
         port: 22
         host: "{{ inventory_hostname }}"
       delegate_to: localhost
-
-    # - name: Wait long enough for cloud-init to install python2
-    #   pause:
-    #     seconds: 20
-    #   delegate_to: localhost
+      tags: provision
 
     - name: Say hello
       shell: >-
@@ -78,3 +111,4 @@
 
     - debug:
         msg: "{{ hello.stdout_lines }}"
+
