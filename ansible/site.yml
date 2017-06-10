@@ -12,7 +12,7 @@
         state: present
         command: ssh
         name: mimic
-        ssh_pub_key: "{{ lookup('file', '~/.ssh/mimic.pub') }}"
+        ssh_pub_key: "{{ lookup('file', lookup('env', 'SSH_PUB_KEY') | default ('~/.ssh/id_rsa.pub')) }}"
       register: ssh_response
       tags: provision
 
@@ -59,7 +59,7 @@
   gather_facts: false
 
   vars:
-    client_count: 1
+    client_count: 6
 
   tasks:
     - name: Group client node(s)
@@ -69,7 +69,6 @@
 
     - name: Group server node(s)
       group_by: key=server
-      when: inventory_hostname not in groups.client
       tags: provision
 
 - hosts: localhost
@@ -83,7 +82,7 @@
         state: present
         resource_id: "{{ hostvars[item].do_id }}"
       with_items: "{{ groups.client }}"
-      tags: provision
+      tags: tag
 
     - name: Tag server nodes
       digital_ocean_tag:
@@ -91,7 +90,7 @@
         state: present
         resource_id: "{{ hostvars[item].do_id }}"
       with_items: "{{ groups.server }}"
-      tags: provision
+      tags: tag
 
 - hosts: all
   gather_facts: false
@@ -104,11 +103,8 @@
       delegate_to: localhost
       tags: provision
 
-    - name: Say hello
-      shell: >-
-        echo "Hello from {{ inventory_hostname }}"
-      register: hello
+- hosts: all
+  gather_facts: true
 
-    - debug:
-        msg: "{{ hello.stdout_lines }}"
-
+  roles:
+    - base

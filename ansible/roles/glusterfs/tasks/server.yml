@@ -1,0 +1,63 @@
+---
+- include_vars: server.yml
+
+- name: Install GlusterFS server
+  apt:
+    name: glusterfs-server
+    state: present
+
+- name: Start and enable GlusterFS server
+  service:
+    name: glusterfs-server
+    state: started
+    enabled: yes
+
+- name: Stat Gluster brick file
+  stat:
+    path: "{{ brick_path }}"
+    get_checksum: no
+    get_md5: no
+  register: brick_file
+
+- name: Allocate 80% of the root volume to GlusterFS storage
+  command: fallocate -l {{ size_bytes }} {{ brick_path }}
+  vars:
+    size_bytes: "{{ (ansible_mounts[0].size_total * 0.8) | int | abs }}"
+  when: brick_file.stat.exists == False
+
+- name: Format brick file as XFS
+  filesystem:
+    fstype: xfs
+    dev: "{{ brick_path }}"
+    # XFS formatting options recommend by Gluster docs
+    opts: '-i size=512 -n size=8192'
+
+- name: Mount GlusterFS storage volume
+  mount:
+    path: "{{ brick_mount }}"
+    src: "{{ brick_path }}"
+    fstype: xfs
+    opts: defaults
+    dump: 0
+    passno: 0
+    state: mounted
+
+- name: Create GlusterFS brick subfolder
+  file:
+    path: "{{ brick_mount }}/brick"
+    mode: 0700
+    owner: root
+    group: root
+    state: directory
+
+- name: Create Gluster volume
+  gluster_volume:
+    state: present
+    name: "{{ volume_name }}"
+    bricks: "{{ brick_mount }}/brick"
+    disperses: "{{ groups.server | length }}"
+    redundancies: 2
+    cluster: "{{ gluster_servers }}"
+    start_on_create: yes
+    transport: tcp
+  run_once: true

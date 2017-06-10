@@ -1,0 +1,4 @@
+---
+volume_name: gvol
+brick_path: /brick.file
+brick_mount: /bricks/{{ volume_name }}

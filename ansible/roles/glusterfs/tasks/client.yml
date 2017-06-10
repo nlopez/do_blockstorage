@@ -1,0 +1,19 @@
+- include_vars: client.yml
+
+- name: Install GlusterFS client
+  apt:
+    name: glusterfs-client
+    state: present
+
+- debug:
+    var: gluster_servers
+
+- name: Mount Gluster volume (client)
+  mount:
+    path: "{{ volume_mount }}"
+    src: "{{ gluster_servers[0] }}:/{{ volume_name }}"
+    fstype: glusterfs
+    opts: "backup-volfile-servers={{ gluster_servers[1:] | join(':') }}"
+    dump: 0
+    passno: 0
+    state: mounted

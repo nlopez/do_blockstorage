@@ -1,0 +1,17 @@
+---
+- name: Add repo and signing key for GlusterFS
+  apt_repository:
+    repo: 'ppa:gluster/glusterfs-{{ gluster_version }}'
+    state: present
+
+# Both client and server tasks need the list of Gluster server IPs
+# So we determine them here in the main task
+- set_fact:
+    gluster_servers: "{{ gluster_servers | default([]) + [ hostvars[item].ansible_eth1.ipv4.address ] }}"
+  with_items: "{{ groups.server }}"
+
+- include: server.yml
+  when: "'server' in group_names"
+
+- include: client.yml
+  when: "'client' in group_names"
