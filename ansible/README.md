@@ -1,8 +1,8 @@
 # do_blockstorage
 
-This Ansible repo creates a 6 node GlusterFS cluster using DigitalOcean droplets, where each node is both a server and a client. 80% of the root volume is allocated as a [brick](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/), and these six bricks are used to create a [dispersed volume](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/?highlight=dispersed%20volumes#creating-dispersed-volumes), which can tolerate failure of up to two server nodes at a time.
+This Ansible repo contains playbooks and roles which create a 6 node [GlusterFS](https://www.gluster.org/) cluster using DigitalOcean droplets, where each node is both a server and a client. 80% of the root volume is allocated as a [brick](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/), and these six bricks are used to create a [dispersed volume](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/?highlight=dispersed%20volumes#creating-dispersed-volumes), which can tolerate failure of up to two server nodes at a time.
 
-Client mount points are created at `/mnt/gvol` on each node, and you end up with ~62GB usable space when running on 512MB droplets.
+Client mount points are created at `/mnt/gvol` on each node, and you end up with ~62GB usable space when running on 512MB droplets. Two nodes worth of storage are reserved for parity/erasure coding.
 
 ## Usage
 ### Pre-requisites
@@ -16,6 +16,11 @@ Client mount points are created at `/mnt/gvol` on each node, and you end up with
 1. `pipenv shell` to enter a virtualenv with all our required dependencies
 2. Export any vars you need from pre-requisites above. `DO_API_TOKEN` is required.
 3. `ansible-playbook site.yml` to setup the GlusterFS cluster.
+
+## Tests
+`ansible-playbook test.yml` to run tests. This test writes a file from each node, unique to each host and each test run, and validates its checksum from every other node, confirming the consistency of our distributed storage.
+
+Run using `ansible-playbook --skip-tags cleanup test.yml` to leave test files around after tests end.
 
 ## Tags
 For use with Ansible [`--tags` or `--skip-tags`](https://docs.ansible.com/ansible/playbooks_tags.html):

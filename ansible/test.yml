@@ -32,3 +32,12 @@
         msg: "Checksum validation failed"
       when: item.rc != 0
       with_items: "{{ validation.results }}"
+
+    - name: Cleanup test files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /mnt/gvol/hello-{{ ansible_hostname }}.txt
+        - /mnt/gvol/hello-{{ ansible_hostname }}.txt.shasum
+      tags: cleanup
