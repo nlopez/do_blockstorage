@@ -5,7 +5,7 @@
   tasks:
     - name: Write a greeting from each node
       copy:
-        dest: /mnt/gvol/hello-{{ ansible_hostname }}.txt
+        dest: /data/hello-{{ ansible_hostname }}.txt
         content: |
           Hello from {{ ansible_hostname }}!
           The time is now {{ ansible_date_time.iso8601_micro }}
@@ -13,12 +13,12 @@
 
     - name: Compute and store greeting checksums
       shell: >-
-        shasum /mnt/gvol/hello-{{ ansible_hostname }}.txt >
-        /mnt/gvol/hello-{{ ansible_hostname }}.txt.shasum
+        shasum /data/hello-{{ ansible_hostname }}.txt >
+        /data/hello-{{ ansible_hostname }}.txt.shasum
       when: wrote_greeting.changed
 
     - name: Validate each greeting checksum on each host
-      command: shasum -c /mnt/gvol/hello-{{ hostvars[item].ansible_hostname }}.txt.shasum
+      command: shasum -c /data/hello-{{ hostvars[item].ansible_hostname }}.txt.shasum
       with_items: "{{ ansible_play_hosts }}"
       register: validation
 
@@ -38,6 +38,6 @@
         path: "{{ item }}"
         state: absent
       with_items:
-        - /mnt/gvol/hello-{{ ansible_hostname }}.txt
-        - /mnt/gvol/hello-{{ ansible_hostname }}.txt.shasum
+        - /data/hello-{{ ansible_hostname }}.txt
+        - /data/hello-{{ ansible_hostname }}.txt.shasum
       tags: cleanup

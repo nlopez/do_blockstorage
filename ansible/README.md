@@ -2,7 +2,7 @@
 
 This Ansible repo contains playbooks and roles which create a 6 node [GlusterFS](https://www.gluster.org/) cluster using DigitalOcean droplets, where each node is both a server and a client. 80% of the root volume is allocated as a [brick](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/), and these six bricks are used to create a [dispersed volume](https://gluster.readthedocs.io/en/latest/Administrator%20Guide/Setting%20Up%20Volumes/?highlight=dispersed%20volumes#creating-dispersed-volumes), which can tolerate failure of up to two server nodes at a time.
 
-Client mount points are created at `/mnt/gvol` on each node, and you end up with ~62GB usable space when running on 512MB droplets. Two nodes worth of storage are reserved for parity/erasure coding.
+Client mount points are created at `/data` on each node, and you end up with ~62GB usable space when running on 512MB droplets. Two nodes worth of storage are reserved for parity/erasure coding.
 
 ## Usage
 ### Pre-requisites
