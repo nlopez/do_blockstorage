@@ -1,0 +1,34 @@
+---
+- hosts: client
+  gather_facts: yes
+
+  tasks:
+    - name: Write a greeting from each node
+      copy:
+        dest: /mnt/gvol/hello-{{ ansible_hostname }}.txt
+        content: |
+          Hello from {{ ansible_hostname }}!
+          The time is now {{ ansible_date_time.iso8601_micro }}
+      register: wrote_greeting
+
+    - name: Compute and store greeting checksums
+      shell: >-
+        shasum /mnt/gvol/hello-{{ ansible_hostname }}.txt >
+        /mnt/gvol/hello-{{ ansible_hostname }}.txt.shasum
+      when: wrote_greeting.changed
+
+    - name: Validate each greeting checksum on each host
+      command: shasum -c /mnt/gvol/hello-{{ hostvars[item].ansible_hostname }}.txt.shasum
+      with_items: "{{ ansible_play_hosts }}"
+      register: validation
+
+    - name: Show validation results
+      debug:
+        msg: "{{ item.stdout_lines }}"
+      with_items: "{{ validation.results }}"
+
+    - name: Assert that shasum check exited successfully in each case
+      fail:
+        msg: "Checksum validation failed"
+      when: item.rc != 0
+      with_items: "{{ validation.results }}"

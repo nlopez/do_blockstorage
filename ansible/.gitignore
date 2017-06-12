@@ -1,2 +1,2 @@
-**/site.retry
+**/*.retry
 **/ansible-digital_ocean.cache
